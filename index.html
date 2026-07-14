@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0B0A0C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MiddleGround" />
+  <meta name="description" content="A live conversation companion for staying grounded in truth and finding common ground." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <title>MiddleGround</title>
+  <script type="module" crossorigin src="/middleground/assets/index-BViAogEs.js"></script>
+  <link rel="stylesheet" crossorigin href="/middleground/assets/index-BBmUatbX.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- HOME -->
+    <main id="view-home" class="view">
+      <div class="home-center">
+        <h1 class="wordmark">Middle<span>Ground</span></h1>
+        <p class="tagline">Talk it through. Stay grounded.</p>
+        <button id="btn-record" class="record-btn" aria-label="Start recording a conversation">
+          <span class="record-ring" aria-hidden="true"></span>
+          <svg class="record-mic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 15a3.4 3.4 0 0 0 3.4-3.4V6.4a3.4 3.4 0 1 0-6.8 0v5.2A3.4 3.4 0 0 0 12 15z"/>
+            <path d="M18.6 11.6a6.6 6.6 0 0 1-13.2 0"/>
+            <line x1="12" y1="18.2" x2="12" y2="21"/>
+            <line x1="9" y1="21" x2="15" y2="21"/>
+          </svg>
+        </button>
+        <p class="record-hint">Tap to begin</p>
+      </div>
+      <footer class="home-foot">
+        <button id="btn-last-report" class="ghost-btn hidden">Last conversation</button>
+        <button id="btn-settings" class="ghost-btn gear-btn" aria-label="Settings">
+          <svg class="gear-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#d9d9de"/>
+                <stop offset="0.45" stop-color="#9a9aa2"/>
+                <stop offset="0.55" stop-color="#c8c8cf"/>
+                <stop offset="1" stop-color="#7e7e88"/>
+              </linearGradient>
+            </defs>
+            <path fill="url(#silver)" d="M19.4 13c.04-.33.06-.66.06-1s-.02-.67-.06-1l2.1-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.6-.22l-2.48 1a7.6 7.6 0 0 0-1.73-1l-.37-2.64A.5.5 0 0 0 13.94 2h-4a.5.5 0 0 0-.5.42L9.07 5.06a7.6 7.6 0 0 0-1.73 1l-2.48-1a.5.5 0 0 0-.6.22l-2 3.46a.5.5 0 0 0 .12.64L4.48 11c-.04.33-.06.66-.06 1s.02.67.06 1l-2.1 1.65a.5.5 0 0 0-.12.64l2 3.46c.13.22.39.31.6.22l2.48-1a7.6 7.6 0 0 0 1.73 1l.37 2.64a.5.5 0 0 0 .5.42h4a.5.5 0 0 0 .5-.42l.37-2.64a7.6 7.6 0 0 0 1.73-1l2.48 1c.21.09.47 0 .6-.22l2-3.46a.5.5 0 0 0-.12-.64L19.4 13zM11.94 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/>
+          </svg>
+          <span class="gear-label">Settings</span>
+        </button>
+      </footer>
+    </main>
+
+    <!-- LIVE SESSION -->
+    <main id="view-live" class="view hidden">
+      <header class="live-head">
+        <div id="status-pill" class="status-pill" role="status" aria-live="polite">
+          <span class="status-dot"></span><span id="status-text">Listening</span>
+        </div>
+        <button id="btn-stop" class="stop-btn" aria-label="Stop and summarize">Stop</button>
+      </header>
+      <section id="transcript" class="transcript" aria-label="Live transcript"></section>
+      <div id="notice-area" class="notice-area" aria-live="polite"></div>
+      <footer class="live-foot">
+        <button id="btn-min" class="min-btn" aria-label="Ask Min a question">
+          <span class="min-glyph">M</span><span class="min-label">Ask Min</span>
+        </button>
+        <button id="btn-skip" class="ghost-btn hidden" aria-label="Stop Min speaking">Skip</button>
+      </footer>
+    </main>
+
+    <!-- REPORT -->
+    <main id="view-report" class="view hidden">
+      <header class="page-head">
+        <button id="btn-report-home" class="ghost-btn">Done</button>
+        <h2>Common ground</h2>
+        <button id="btn-view-transcript" class="ghost-btn">Transcript</button>
+      </header>
+      <section id="report-body" class="report-body"></section>
+      <footer class="page-foot">
+        <button id="btn-clear-session" class="danger-ghost">Clear this conversation</button>
+      </footer>
+    </main>
+
+    <!-- TRANSCRIPT -->
+    <main id="view-transcript" class="view hidden">
+      <header class="page-head">
+        <button id="btn-transcript-back" class="ghost-btn">Back</button>
+        <h2>Transcript</h2>
+        <span class="head-spacer"></span>
+      </header>
+      <section id="transcript-full" class="transcript readonly"></section>
+    </main>
+
+    <!-- SETTINGS -->
+    <main id="view-settings" class="view hidden">
+      <header class="page-head">
+        <button id="btn-settings-back" class="ghost-btn">Back</button>
+        <h2>Settings</h2>
+        <span class="head-spacer"></span>
+      </header>
+      <section class="settings-body">
+        <div class="setting">
+          <label for="input-groq-key">Groq API key</label>
+          <p class="setting-note">Powers Min's answers, live research, and fact-checking. Free at console.groq.com. Stored only on this device.</p>
+          <input id="input-groq-key" type="password" placeholder="gsk_..." autocomplete="off" />
+          <p id="key-status" class="setting-status"></p>
+        </div>
+        <div class="setting">
+          <label for="toggle-factcheck">Automatic fact-checking</label>
+          <p class="setting-note">Min speaks up only for clearly false, material factual claims.</p>
+          <input id="toggle-factcheck" type="checkbox" checked />
+        </div>
+        <div class="setting">
+          <label for="toggle-voice">Spoken answers</label>
+          <p class="setting-note">Min reads answers aloud. Answers always appear on screen.</p>
+          <input id="toggle-voice" type="checkbox" checked />
+        </div>
+        <div class="setting">
+          <p class="setting-note about">MiddleGround listens locally in your browser. Transcript text is sent to Groq only when Min answers, fact-checks, or summarizes. Nothing is uploaded anywhere else, and no account is required.</p>
+        </div>
+      </section>
+    </main>
+
+  </div>
+</body>
+</html>
