@@ -474,7 +474,16 @@ function boot(): void {
   $('btn-stop').addEventListener('click', () => { void endSession(true); });
   $('btn-min').addEventListener('click', manualAsk);
   $('btn-skip').addEventListener('click', skipSpeaking);
-  $('btn-settings').addEventListener('click', () => showView('settings'));
+  $('btn-settings').addEventListener('click', () => {
+    // purely cosmetic: spin the gear, then navigate as before
+    const gear = document.querySelector<HTMLElement>('#btn-settings .gear-icon');
+    if (gear) {
+      gear.classList.remove('spin');
+      void gear.offsetWidth; // restart the animation
+      gear.classList.add('spin');
+    }
+    showView('settings');
+  });
   $('btn-settings-back').addEventListener('click', () => showView('home'));
   $('btn-report-home').addEventListener('click', () => showView('home'));
   $('btn-view-transcript').addEventListener('click', () => { renderFullTranscript(); showView('transcript'); });
