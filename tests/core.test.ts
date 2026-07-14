@@ -188,3 +188,15 @@ describe('groq source extraction', () => {
     expect(stripCitationMarks('fact【https://a.com】 done')).toBe('fact done');
   });
 });
+
+describe('fact-check ordering regression', () => {
+  it('a fresh claim is not suppressed as its own duplicate', () => {
+    const g = freshGate();
+    const v = verdict('false', 1, 'The Great Wall is visible from the moon');
+    const decision = decide(v, g, DEFAULT_GATE, 500_000, 0, false);
+    expect(decision).toBe('speak');
+    // marking as checked AFTER deciding is the correct order
+    g.checkedClaims.push(normalizeClaim(v.claim));
+    expect(decide(v, g, DEFAULT_GATE, 900_000, 1, false)).toBe('ignore');
+  });
+});

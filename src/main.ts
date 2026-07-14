@@ -289,8 +289,10 @@ async function factTick(): Promise<void> {
         }
       }
       if (verdict) {
-        gate.checkedClaims.push(normalizeClaim(claimText));
+        // decide() must run BEFORE the claim is marked as checked,
+        // otherwise it would suppress itself as a duplicate.
         const decision = decide(verdict, gate, DEFAULT_GATE, Date.now(), interruptCount, minState.get() !== 'idle' || voice.isSpeaking());
+        gate.checkedClaims.push(normalizeClaim(claimText));
         if (decision !== 'ignore') await deliverFactNote(verdict, decision);
       }
     }
