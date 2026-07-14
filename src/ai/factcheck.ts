@@ -129,3 +129,27 @@ export async function verifyClaim(key: string, claim: string, signal?: AbortSign
     sources: r.sources
   };
 }
+
+// Fallback verification without live search (used when the search model is
+// throttled). Extra-conservative: only well-established knowledge may yield
+// a false/misleading verdict, and no sources are attached.
+const VERIFY_OFFLINE_SYSTEM = `You are a careful fact-checker working WITHOUT live web access. Judge the claim against well-established knowledge only. Respond ONLY with JSON:
+{"verdict":"false"|"misleading"|"true"|"unverified","confidence":0..1,"correction":"one or two calm sentences, phrased like 'A quick factual note: ...' — never accusatory"}
+Only use "false" or "misleading" for claims contradicted by thoroughly established, uncontroversial knowledge (basic science, geography, math, well-documented history). For anything recent, statistical, close, or possibly changed, use "unverified" with low confidence.`;
+
+export async function verifyClaimOffline(key: string, claim: string, signal?: AbortSignal): Promise<ClaimVerdict> {
+  const r = await chat(key, REASON_MODEL, [
+    { role: 'system', content: VERIFY_OFFLINE_SYSTEM },
+    { role: 'user', content: `Claim made in conversation: "${claim}"` }
+  ], { json: true, maxTokens: 300, temperature: 0, signal });
+  let parsed: any = null;
+  try { parsed = JSON.parse(r.text); } catch { /* fall through */ }
+  const verdict = ['false', 'misleading', 'true', 'unverified'].includes(parsed?.verdict) ? parsed.verdict : 'unverified';
+  return {
+    claim,
+    verdict,
+    confidence: Math.max(0, Math.min(1, Number(parsed?.confidence) || 0)),
+    correction: typeof parsed?.correction === 'string' ? parsed.correction : '',
+    sources: []
+  };
+}

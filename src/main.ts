@@ -3,7 +3,7 @@
 // scheduler → session report, plus views, settings, and persistence.
 
 import './styles.css';
-import type { FactNotice, MinState, SessionData, Turn } from './types';
+import type { ClaimVerdict, FactNotice, MinState, SessionData, Turn } from './types';
 import { Cell, uid } from './state/store';
 import { LiveRecognizer, speechSupported } from './audio/speech';
 import { Voice, ttsSupported } from './audio/tts';
@@ -14,7 +14,7 @@ import * as storage from './core/storage';
 import { answerQuestion, summarizeForContext } from './ai/min';
 import { busy as groqBusy, testKey } from './ai/groq';
 import {
-  DEFAULT_GATE, decide, normalizeClaim, passesScreen, screenClaims, verifyClaim,
+  DEFAULT_GATE, decide, isDuplicate, normalizeClaim, passesScreen, screenClaims, verifyClaim, verifyClaimOffline,
   type GateState
 } from './ai/factcheck';
 import { generateReport } from './ai/report';
@@ -35,6 +35,7 @@ let minAbort: AbortController | null = null;
 let interruptCount = 0;
 const gate: GateState = { lastInterruptTs: 0, checkedClaims: [], processing: false };
 let unscreenedFinals: string[] = [];
+let pendingClaims: string[] = [];
 let factTimer: number | null = null;
 let saveTimer: number | null = null;
 
@@ -265,19 +266,40 @@ async function factTick(): Promise<void> {
   gate.processing = true;
   unscreenedFinals = [];
   try {
-    const screened = await screenClaims(key, segment);
-    let verifiedThisTick = 0;
-    for (const c of screened) {
-      if (verifiedThisTick >= 1) break; // pace search calls under free-tier limits
-      if (!passesScreen(c)) continue;
-      if (gate.checkedClaims.some(prev => prev === normalizeClaim(c.claim))) continue;
-      const verdict = await verifyClaim(key, c.claim);
-      verifiedThisTick++;
-      gate.checkedClaims.push(normalizeClaim(c.claim));
-      const decision = decide(verdict, gate, DEFAULT_GATE, Date.now(), interruptCount, minState.get() !== 'idle' || voice.isSpeaking());
-      if (decision === 'ignore') continue;
+    // One claim per tick, to stay under free-tier search limits. Claims that
+    // could not be verified (throttling) wait in a small queue for later ticks.
+    let claimText: string | null = pendingClaims.shift() ?? null;
+    if (!claimText) {
+      const screened = await screenClaims(key, segment);
+      const c = screened.find(x => passesScreen(x) &&
+        !gate.checkedClaims.some(prev => prev === normalizeClaim(x.claim)) &&
+        !isDuplicate(x.claim, gate.checkedClaims));
+      claimText = c?.claim ?? null;
+    }
+    if (claimText) {
+      let verdict;
+      try {
+        verdict = await verifyClaim(key, claimText);
+      } catch {
+        // search model throttled — try the conservative no-search verifier
+        try { verdict = await verifyClaimOffline(key, claimText); }
+        catch {
+          if (pendingClaims.length < 3) pendingClaims.push(claimText); // retry later
+          verdict = null;
+        }
+      }
+      if (verdict) {
+        gate.checkedClaims.push(normalizeClaim(claimText));
+        const decision = decide(verdict, gate, DEFAULT_GATE, Date.now(), interruptCount, minState.get() !== 'idle' || voice.isSpeaking());
+        if (decision !== 'ignore') await deliverFactNote(verdict, decision);
+      }
+    }
+  } catch { /* screening failed (offline/rate limit) - try again next tick */ }
+  finally { gate.processing = false; }
+}
 
-      const note: FactNotice = {
+async function deliverFactNote(verdict: ClaimVerdict, decision: 'speak' | 'notice'): Promise<void> {
+  const note: FactNotice = {
         id: uid(),
         claim: verdict.claim,
         note: verdict.correction || `The claim "${verdict.claim}" may not be accurate.`,
@@ -300,13 +322,10 @@ async function factTick(): Promise<void> {
         await voice.speak(note.note, storage.getPref('voice'));
         if (minState.get() === 'speaking') minState.set('idle');
         if (sessionActive) setStatus('listening', 'Listening');
-      } else {
-        showNotice(note);
-      }
-      scheduleSave();
-    }
-  } catch { /* screening failed (offline/rate limit) — try again next tick */ }
-  finally { gate.processing = false; }
+  } else {
+    showNotice(note);
+  }
+  scheduleSave();
 }
 
 // ── context compression ─────────────────────────────────────────
